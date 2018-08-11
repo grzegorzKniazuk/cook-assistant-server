@@ -1,4 +1,4 @@
-function engine_setup(app, express, path, cookieParser, logger, sassMiddleware) {
+function engine_setup(app, express, path, cookieParser, logger, sassMiddleware, jsonwebtoken, User) {
     app.set('views', path.join(__dirname, 'views'));
     app.set('view engine', 'pug');
 
@@ -13,6 +13,20 @@ function engine_setup(app, express, path, cookieParser, logger, sassMiddleware) 
         sourceMap: true
     }));
     app.use(express.static(path.join(__dirname, 'public')));
+    app.use((request, response, next) => {
+        if (request.headers && request.headers.authorization && request.headers.authorization.split(' ')[0] === 'JWT') {
+            jsonwebtoken.verify(request.headers.authorization.split(' ')[1], 'RESTFULAPIs', (error, decode) => {
+                if (error) {
+                    request.user = undefined;
+                    request.user = decode;
+                    next();
+                }
+            })
+        } else {
+            request.user = undefined;
+            next();
+        }
+    });
     app.listen(3000);
 }
 

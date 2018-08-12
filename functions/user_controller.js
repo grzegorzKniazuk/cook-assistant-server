@@ -1,16 +1,22 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const jwt_decode = require('jwt-decode');
 const User = require('../models/user.model');
 
 exports.register = function(request, response){
     let newUser = new User(request.body);
+
     newUser.hash_password = bcrypt.hashSync(request.body.password, 10);
-    newUser.save((error, user) => {
+    newUser.save((error) => {
         if (error) {
-            throw new Error(error);
+            switch (error.code) { // uzytkownik lub email istnieje w bazie
+                case 11000: {
+                    response.send('11000');
+                    break;
+                }
+            }
         } else {
-            console.log(`${user.username} registered.`);
-            response.json(user);
+            response.send('1');
         }
     });
 };
@@ -25,15 +31,62 @@ exports.login = function(request, response){
             if (!user.comparePassword(request.body.password)) {
                 response.status(401).json({ message: 'Authentication failed. Wrong password.' });
             } else {
-                return response.json({token: jwt.sign({ email: user.email, fullName: user.username, _id: user._id}, 'RESTFULAPIs')});
+                const jwtBearerToken = jwt.sign({ email: user.email, username: user.username, _id: user._id }, 'RESTFULAPIs', {
+                    subject: user._id.toString(),
+                });
+                response.status(200).json({ token: jwtBearerToken });
             }
         }
     });
 };
-exports.loginRequired = function(request, response, next){
-    if (request.user) {
-        next();
-    } else {
-        return response.status(401).json({ message: 'Unauthorized user!' });
-    }
+
+exports.isLoggedIn = function (request, response) {
+    jwt.verify(request.body.token, 'RESTFULAPIs', (error) => {
+        if (error) {
+            response.send(false);
+        } else {
+            response.send(true);
+        }
+    });
 };
+
+exports.loadUserData = function (request, response) {
+    const currentUser = jwt_decode(request.headers.authorization);
+    User.findOne({_id: currentUser._id}, (error, userData) => {
+        const data = {
+            'username': userData.username,
+            'email': userData.email,
+        };
+        if (error) {
+            throw new Error(error);
+        } else {
+            response.json(data);
+        }
+    })
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

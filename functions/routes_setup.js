@@ -1,14 +1,10 @@
 const userController = require('./user_controller');
 
 function routes_setup(app) {
-    app.route('/register')
-        .post(userController.register);
-    app.route('/login')
-        .post(userController.login);
-    app.route('/isLoggedIn')
-        .post(userController.isLoggedIn);
-    app.route('/loadUserData')
-        .get(userController.loadUserData);
+    app.post('/register', userController.register);
+    app.post('/login', userController.login);
+    app.post('/isLoggedIn', userController.isLoggedIn);
+    app.get('/loadUserData', userController.loadUserData);
 }
 
 module.exports = routes_setup;

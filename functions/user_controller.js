@@ -26,10 +26,12 @@ exports.login = function(request, response){
             throw new Error(error);
         }
         if (!user) {
-            response.status(401).json({ message: 'Authentication failed. User not found.' });
+            response.status(401).send('Authorization failed.');
+            return false;
         } else if (user) {
             if (!user.comparePassword(request.body.password)) {
-                response.status(401).json({ message: 'Authentication failed. Wrong password.' });
+                response.status(401).send('Authorization failed.');
+                return false;
             } else {
                 const jwtBearerToken = jwt.sign({ email: user.email, username: user.username, _id: user._id }, 'RESTFULAPIs', {
                     subject: user._id.toString(),

@@ -11,12 +11,11 @@ exports.register = function(request, response){
         if (error) {
             switch (error.code) { // uzytkownik lub email istnieje w bazie
                 case 11000: {
-                    response.send('11000');
-                    break;
+                    response.send('Already registered');
                 }
             }
         } else {
-            response.send('1');
+            response.send('Register successful');
         }
     });
 };
@@ -26,18 +25,21 @@ exports.login = function(request, response){
             throw new Error(error);
         }
         if (!user) {
-            response.status(401).send('Authorization failed.');
+            response.status(401).send('Unauthorized');
             return false;
         } else if (user) {
-            if (!user.comparePassword(request.body.password)) {
-                response.status(401).send('Authorization failed.');
-                return false;
-            } else {
-                const jwtBearerToken = jwt.sign({ email: user.email, username: user.username, _id: user._id }, 'RESTFULAPIs', {
-                    subject: user._id.toString(),
-                });
-                response.status(200).json({ token: jwtBearerToken });
-            }
+            user.comparePassword(request.body.password).then(isCorrect => {
+                if (!isCorrect) {
+                    response.status(401).send('Unauthorized');
+                    return false;
+                } else {
+                    const jwtBearerToken = jwt.sign({ email: user.email, username: user.username, _id: user._id }, 'RESTFULAPIs', {
+                        subject: user._id.toString(),
+                    });
+                    response.status(200).json({ token: jwtBearerToken });
+                }
+            });
+
         }
     });
 };
